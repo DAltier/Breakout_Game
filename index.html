@@ -29,14 +29,15 @@
     const PADDLE_DIST_FROM_EDGE = 60;
     var paddleX = 400;
 
-    var mouseX = 0;
-    var mouseY = 0;
+    var mouseX = 400;
+    var mouseY = 400;
 
-    const BRICK_W = 100;
-    const BRICK_H = 50;
-    const BRICK_COUNT = 8;
+    const BRICK_W = 80;
+    const BRICK_H = 20;
+    const BRICK_COLS = 10;
     const BRICK_GAP = 2;
-    var brickGrid = new Array(BRICK_COUNT);
+    const BRICK_ROWS = 14;
+    var brickGrid = new Array(BRICK_COLS * BRICK_ROWS);
 
 
     function updateMousePos(evt) {
@@ -47,19 +48,12 @@
       mouseY = evt.clientY - rect.top - root.scrollTop;
 
       paddleX = mouseX - PADDLE_WIDTH/2;
-
-      console.log(mouseX);
-      console.log(mouseY);
     }
 
 
     function brickReset() {
-      for (var i = 0; i < BRICK_COUNT; i++) {
-        if (Math.random() < 0.5) {
-          brickGrid[i] = true;
-        } else {
-          brickGrid[i] = false;
-        }
+      for (var i = 0; i < BRICK_COLS * BRICK_ROWS; i++) {
+        brickGrid[i] = true;
       }
     }
 
@@ -82,8 +76,8 @@
 
 
     function ballReset() {
-      ballX = canvas.width/2;
-      ballY = canvas.height/2;
+      ballX = canvas.width / 2;
+      ballY = canvas.height / 2;
     }
 
     // Function to move ball 
@@ -93,19 +87,31 @@
       ballY += ballSpeedY;
 
       // Bouncing ball off the left and right sides
-      if (ballX > canvas.width) {
+      if (ballX < 0) {
         ballSpeedX *= -1;
       }
-      if (ballX < 0) {
+      if (ballX > canvas.width) {
         ballSpeedX *= -1;
       }
 
       // Bouncing ball off the top and bottom sides
+      if (ballY < 0) {
+        ballSpeedY *= -1;
+      }
       if (ballY > canvas.height) {
         ballReset();
       }
-      if (ballY < 0) {
-        ballSpeedY *= -1;
+
+      var ballBrickCol = Math.floor(ballX / BRICK_W);
+      var ballBrickRow = Math.floor(ballY / BRICK_H);
+      var brickIndexUnderBall = rowColToArrayIndex(ballBrickCol, ballBrickRow);      
+    
+      if(ballBrickCol >= 0 && ballBrickCol < BRICK_COLS && 
+        ballBrickRow >= 0 && ballBrickRow < BRICK_ROWS) {
+        if (brickGrid[brickIndexUnderBall]) {
+          brickGrid[brickIndexUnderBall] = false;
+          ballSpeedY *= -1;
+        }
       }
 
       var paddleTopEdgeY = canvas.height - PADDLE_DIST_FROM_EDGE;
@@ -124,32 +130,9 @@
             var ballDistFromPaddleCenterX = ballX - centerOfPaddleX;
             ballSpeedX = ballDistFromPaddleCenterX * 0.35;
           }
-    }
-
-    // Function to draw all elements of the game
-    function drawAll() {
-
-      // Drawing the canvas
-      colorRect(0, 0, canvas.width, canvas.height, 'black');
-
-      // Drawing the ball
-      colorCircle(ballX, ballY, 10, 'white');
-
-      // Drawing the paddle
-      colorRect(paddleX, canvas.height - PADDLE_DIST_FROM_EDGE, PADDLE_WIDTH, PADDLE_THICKNESS, 'white');
-
-      // Drawing the bricks
-      drawBricks();
-
-      var mouseBrickCol = mouseX / BRICK_W;
-      var mouseBrickRows = mouseY / BRICK_H;
-      // Drawing text on screen
-      colorText(mouseBrickCol + "," + mouseBrickRows, mouseX, mouseY, 'yellow');
-
 
     }
-
-
+    
     // Drawing a rectangle
     function colorRect(topLeftX, topLeftY, boxWidth, boxHeight, fillColor) {
 
@@ -168,7 +151,7 @@
       canvasContext.fill();
 
     }
-
+    
 
     // Drawing text
     function colorText(showWords, textX, textY, fillColor) {
@@ -178,14 +161,44 @@
 
     }
 
-    
+    function rowColToArrayIndex(col, row) {
+
+      return col + BRICK_COLS * row;
+
+    }
+
     // Drawing the bricks
     function drawBricks() {
-      for (var i = 0; i < BRICK_COUNT; i++) {
-        if (brickGrid[i]) {
-          colorRect(BRICK_W * i, 0, BRICK_W - BRICK_GAP, BRICK_H, 'blue');
+
+      for (var eachRow = 0; eachRow < BRICK_ROWS; eachRow++){
+        for (var eachCol = 0; eachCol < BRICK_COLS; eachCol++) {
+
+          var arrayIndex = rowColToArrayIndex(eachCol, eachRow);
+
+          if (brickGrid[arrayIndex]) {
+            colorRect(BRICK_W * eachCol, BRICK_H * eachRow, BRICK_W - BRICK_GAP, BRICK_H - BRICK_GAP, 'blue');
+          }
         }
       }
+
+    }
+
+
+    // Function to draw all elements of the game
+    function drawAll() {
+    
+      // Drawing the canvas
+      colorRect(0, 0, canvas.width, canvas.height, 'black');
+    
+      // Drawing the ball
+      colorCircle(ballX, ballY, 10, 'white');
+    
+      // Drawing the paddle
+      colorRect(paddleX, canvas.height - PADDLE_DIST_FROM_EDGE, PADDLE_WIDTH, PADDLE_THICKNESS, 'white');
+    
+      // Drawing the bricks
+      drawBricks();
+    
     }
   </script>
 </body>
