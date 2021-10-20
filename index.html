@@ -18,19 +18,24 @@
   <script>
     var canvas, canvasContext;
 
+
     var ballX = 75;
     var ballSpeedX = 5;
 
+
     var ballY = 75;
     var ballSpeedY = 7;
+
 
     const PADDLE_WIDTH = 100;
     const PADDLE_THICKNESS = 10;
     const PADDLE_DIST_FROM_EDGE = 60;
     var paddleX = 400;
 
-    var mouseX = 400;
-    var mouseY = 400;
+
+    var mouseX = 0;
+    var mouseY = 0;
+
 
     const BRICK_W = 80;
     const BRICK_H = 20;
@@ -41,6 +46,7 @@
 
 
     function updateMousePos(evt) {
+
       var rect = canvas.getBoundingClientRect();
       var root = document.documentElement;
 
@@ -48,16 +54,22 @@
       mouseY = evt.clientY - rect.top - root.scrollTop;
 
       paddleX = mouseX - PADDLE_WIDTH/2;
+
     }
 
 
+    // Reset brick grid to initial state
     function brickReset() {
+
       for (var i = 0; i < BRICK_COLS * BRICK_ROWS; i++) {
         brickGrid[i] = true;
       }
+
     }
 
+
     window.onload = function() {
+
       canvas = document.getElementById('gameCanvas');
       canvasContext = canvas.getContext('2d');
 
@@ -67,21 +79,31 @@
       canvas.addEventListener('mousemove', updateMousePos);
 
       brickReset();
+
     }
 
+
+    // Draw all elements and enable ball/paddle movement
     function updateAll() {
+
       moveAll();
       drawAll();
+
     }
 
 
+    // Function to reset ball position
     function ballReset() {
+
       ballX = canvas.width / 2;
       ballY = canvas.height / 2;
+
     }
 
-    // Function to move ball 
-    function moveAll() {
+
+    // Bouncing ball of the sides of the canvas 
+    // Resetting ball to center if it goes off the bottom side of the canvas
+    function ballMove() {
 
       ballX += ballSpeedX;
       ballY += ballSpeedY;
@@ -94,13 +116,20 @@
         ballSpeedX *= -1;
       }
 
-      // Bouncing ball off the top and bottom sides
+      // Bouncing ball off the top side
+      // Resetting to center for the bottom side
       if (ballY < 0) {
         ballSpeedY *= -1;
       }
       if (ballY > canvas.height) {
         ballReset();
       }
+
+    }
+
+
+    // Handle ball and brick colisions
+    function ballBrickHandling() {
 
       var ballBrickCol = Math.floor(ballX / BRICK_W);
       var ballBrickRow = Math.floor(ballY / BRICK_H);
@@ -110,9 +139,27 @@
         ballBrickRow >= 0 && ballBrickRow < BRICK_ROWS) {
         if (brickGrid[brickIndexUnderBall]) {
           brickGrid[brickIndexUnderBall] = false;
-          ballSpeedY *= -1;
+
+          var prevBallX = ballX - ballSpeedX;
+          var prevBallY = ballY - ballSpeedY;
+          var prevBrickCol = Math.floor(prevBallX / BRICK_W);
+          var prevBrickRow = Math.floor(prevBallY / BRICK_H);
+
+          if (prevBrickCol != ballBrickCol) {
+            ballSpeedX *= -1;
+          }
+          if (prevBrickRow != ballBrickRow) {
+            ballSpeedY *= -1;
+          }
+          
         }
       }
+
+    }
+
+
+    // Handle paddle and ball colisions
+    function ballPaddleHandling() {
 
       var paddleTopEdgeY = canvas.height - PADDLE_DIST_FROM_EDGE;
       var paddleBottomEdgeY = paddleTopEdgeY + PADDLE_THICKNESS;
@@ -124,15 +171,28 @@
           ballX > paddleLeftEdgeX && // Ball is right of the left side of paddle
           ballX < paddleRightEdgeX) { // Ball is left of the right side of paddle
 
-            ballSpeedY *= -1;
+        ballSpeedY *= -1;
 
-            var centerOfPaddleX = paddleX + PADDLE_WIDTH / 2;
-            var ballDistFromPaddleCenterX = ballX - centerOfPaddleX;
-            ballSpeedX = ballDistFromPaddleCenterX * 0.35;
-          }
+        var centerOfPaddleX = paddleX + PADDLE_WIDTH / 2;
+        var ballDistFromPaddleCenterX = ballX - centerOfPaddleX;
+        ballSpeedX = ballDistFromPaddleCenterX * 0.35;
+      }
+
+    }
+
+
+    // Function to move ball 
+    function moveAll() {
+
+      ballMove();
+
+      ballBrickHandling();
+
+      ballPaddleHandling();
 
     }
     
+
     // Drawing a rectangle
     function colorRect(topLeftX, topLeftY, boxWidth, boxHeight, fillColor) {
 
@@ -161,11 +221,14 @@
 
     }
 
+
+    // Returns the index of the brick based on the column and row
     function rowColToArrayIndex(col, row) {
 
       return col + BRICK_COLS * row;
 
     }
+
 
     // Drawing the bricks
     function drawBricks() {
